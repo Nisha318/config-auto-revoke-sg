@@ -122,17 +122,17 @@ Comprehensive logging ensures compliance traceability:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Nisha318/AWS-Repo.git
+git clone https://github.com/Nisha318/config-auto-revoke-sg.git
 cd AWS-Repo
 
 # Deploy the CloudFormation stack
-aws cloudformation create-stack \
-  --stack-name ec2-security-automation \
-  --template-body file://cloudformation/remediation-stack.yaml \
-  --capabilities CAPABILITY_IAM
+aws cloudformation deploy \
+  --template-file cloudformation/remediation-stack.yaml \
+  --stack-name RMF-Auto-SG-Remediation \
+  --capabilities CAPABILITY_NAMED_IAM
 ```
 
-![AWS CLI](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/01-aws-cli-deploy.png)
+![AWS CLI](assets/images/01-aws-cli-deploy.png)
 ---
 
 ## Validation Walkthrough
@@ -140,18 +140,18 @@ aws cloudformation create-stack \
 ### Initial State: Compliant Environment
 
 **CloudFormation Stack Deployed:**
-![CloudFormation Stack](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/02-cloudformation-final-stack.png)
+![CloudFormation Stack](assets/images/02-cloudformation-final-stack.png)
 
 **AWS Config Dashboard (All Compliant):**
-![Config Dashboard Compliant](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/03-initial-config-dashboard.png)
+![Config Dashboard Compliant](/assets/images/03-initial-config-dashboard.png)
 
 **Initial Security Group States (No Inbound Rules):**
 
 *RDP Security Group:*
-![RDP SG Initial](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/04-RDP-SG-Begin.png)
+![RDP SG Initial](assets/images/04-RDP-SG-Begin.png)
 
 *SSH Security Group:*
-![SSH SG Initial](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/05-SSH-SG-Begin.png)
+![SSH SG Initial](assets/images/05-SSH-SG-Begin.png)
 
 ---
 
@@ -160,19 +160,19 @@ aws cloudformation create-stack \
 **Simulated Attack: Opening Ports to 0.0.0.0/0**
 
 *RDP Port Exposed:*
-![RDP Violation](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/06-sg-violation-created-RDP.png)
+![RDP Violation](assets/images/06-sg-violation-created-RDP.png)
 
 *SSH Port Exposed:*
-![SSH Violation](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/07-sg-violation-created-SSH)
+![SSH Violation](assets/images/07-sg-violation-created-SSH.png)
 
 **Config Rules Triggered (Non-Compliant Status):**
-![Config Non-Compliant](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/08-config-rule-noncompliant.png)
+![Config Non-Compliant](assets/images/08-config-rule-noncompliant.png)
 
 **Non-Compliant Resource Inventory:**
 - `sg-0679685bff76924c8` (SSH Security Group)
 - `sg-08b6df131d94b0ae4` (RDP Security Group)
 
-![Resource Inventory](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/09-config-rule-resource-inventory.png)
+![Resource Inventory](assets/images/09-config-rule-resource-inventory.png)
 
 ---
 
@@ -181,23 +181,23 @@ aws cloudformation create-stack \
 **Lambda Execution Logs (CloudWatch):**
 
 *SSH Rule Revocation:*
-![CloudWatch SSH](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/10-cloudwatch-revoke-SSH.png)
+![CloudWatch SSH](assets/images/10-cloudwatch-revoke-SSH.png)
 
 *RDP Rule Revocation:*
-![CloudWatch RDP](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/11-cloudwatch-revoke-RDP.png)
+![CloudWatch RDP](assets/images/11-cloudwatch-revoke-RDP.png)
 
 **Lambda Invocation Details:**
-![Lambda Invoke 1](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/12-lambda-invoke1.png)
-![Lambda Invoke 2](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/13-lambda-invoke2.png)
+![Lambda Invoke 1](assets/images/12-lambda-invoke1.png)
+![Lambda Invoke 2](assets/images/13-lambda-invoke2.png)
 
 ---
 
 ### Phase 3: Verified Remediation
 
 **Final Security Group State (Rules Revoked):**
-![SSH SG Final State](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/13-SSH-SG-endstate.png)
+![SSH SG Final State](assets/images/13-SSH-SG-endstate.png)
 
-![RDP SG Final State](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/14-RDP-SG-endstate.png)
+![RDP SG Final State](assets/images/14-RDP-SG-endstate.png)
 
 ✅ **Result**: Unauthorized ingress rules automatically removed, security posture restored
 
@@ -210,12 +210,12 @@ aws cloudformation create-stack \
 #### CloudFormation Template
 Complete infrastructure as code defining Config rules, Lambda function, SSM automation, and IAM roles.
 
-📄 **[View: cloudformation/remediation-stack.yaml](https://github.com/Nisha318/AWS-Repo/blob/main/cloudformation/remediation-stack.yaml)**
+📄 **[View: cloudformation/remediation-stack.yaml](https://github.com/Nisha318/config-auto-revoke-sg/blob/main/cloudformation/remediation-stack.yaml)**
 
 #### Lambda Remediation Handler
 Python function that identifies and revokes non-compliant security group rules using EC2 API.
 
-📄 **[View: config-auto-revoke-sg/revoke_rules_handler.py](https://github.com/Nisha318/AWS-Repo/blob/main/config-auto-revoke-sg/revoke_rules_handler.py)**
+📄 **[View: config-auto-revoke-sg/revoke_rules_handler.py](https://github.com/Nisha318/config-auto-revoke-sg/blob/main/lambda/revoke_rules_handler.py)**
 
 ### Key Lambda Logic
 
@@ -309,7 +309,7 @@ Built on AWS native services following NIST Risk Management Framework (RMF) guid
 ## Contact
 
 **Project Maintainer**: Nisha P McDonnell 
-**Repository**: https://github.com/Nisha318/AWS-Repo
+**Repository**: https://github.com/Nisha318/
 
 ---
 
