@@ -54,31 +54,7 @@ Open administrative ports leak valuable intelligence even on fully patched syste
 
 This automation implements a three-phase control loop: **Detect → Enforce → Audit**
 
-```mermaid
-graph TD
-    subgraph Detection ["🔍 Detection Phase (CA-7)"]
-        A[AWS Config Rules:Incoming-SSH-DisabledIncoming-RDP-Disabled]
-        A -->|Monitors| B[EC2 Security Groups]
-        B -->|Flags Non-Compliance| C[Config Remediation Trigger]
-    end
-    
-    subgraph Enforcement ["⚡ Enforcement Phase (AC-4, SC-7)"]
-        C -->|Invokes| D[SSM Automation Document:RemediateOpenSgDoc]
-        D -->|Executes| E[Lambda Function:ConfigSGRevokerLambda]
-        E -->|API Call: RevokeSecurityGroupIngress| B
-    end
-    
-    subgraph Audit ["📋 Audit Trail (CA-7)"]
-        E -.->|Execution Logs| F[CloudWatch Logs]
-        D -.->|Workflow Records| G[SSM Automation History]
-    end
-    
-    style A fill:#d4edda,stroke:#28a745,stroke-width:2px
-    style B fill:#fff3cd,stroke:#ffc107,stroke-width:2px
-    style E fill:#d1ecf1,stroke:#17a2b8,stroke-width:2px
-    style F fill:#e2e3e5,stroke:#6c757d,stroke-width:2px
-    style G fill:#e2e3e5,stroke:#6c757d,stroke-width:2px
-```
+![Architecture Diagram](/assets/images/aws-architecture.png)
 
 ### Component Breakdown
 
