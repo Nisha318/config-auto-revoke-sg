@@ -1,2 +1,321 @@
-# config-auto-revoke-sg
-Automated AWS security compliance project built with Infrastructure as Code (IaC) using CloudFormation, AWS Config, Lambda, and Systems Manager. Detects and remediates non-compliant security groups in real time, demonstrating cloud automation and NIST RMF control enforcement.
+# Automated EC2 Network Security: RMF Continuous Control Enforcement
+
+[![AWS](https://img.shields.io/badge/AWS-Config-orange)](https://aws.amazon.com/config/)
+[![Security](https://img.shields.io/badge/Security-RMF-blue)](https://csrc.nist.gov/projects/risk-management)
+[![Automation](https://img.shields.io/badge/Automation-Lambda-green)](https://aws.amazon.com/lambda/)
+
+> **Automated enforcement of NIST RMF controls AC-4, CA-7, and SC-7 through continuous monitoring and remediation of publicly exposed SSH and RDP ports on AWS EC2 instances.**
+
+---
+
+## Overview
+
+This project implements an automated security control system that continuously monitors and remediates critical network vulnerabilities in AWS environments. Specifically, it prevents unauthorized exposure of Remote Desktop Protocol (RDP) port 3389 and Secure Shell (SSH) port 22 to the public internet (0.0.0.0/0).
+
+### The Problem
+
+Publicly accessible administrative ports represent one of the most critical security vulnerabilities in cloud infrastructure. When SSH (port 22) or RDP (port 3389) are exposed to 0.0.0.0/0, you essentially leave the front door to your servers wide open to the entire internet.
+
+**Risk Level Summary:**
+
+| Component | Port | Protocol | Risk Level | Impact |
+|-----------|------|----------|------------|--------|
+| **SSH** | 22 | TCP | High | Direct command-line access to server |
+| **RDP** | 3389 | TCP | Critical | Full graphical desktop access |
+| **Source** | 0.0.0.0/0 | N/A | Maximum | Any IP address globally can connect |
+
+---
+
+## Attack Vectors
+
+### 1. Brute-Force Attacks
+
+Automated bots continuously scan the internet for exposed ports 22 and 3389. With world-open access, attackers can launch sustained credential-guessing campaigns:
+
+- **SSH**: Bots attempt common usernames (`admin`, `ubuntu`, `ec2-user`) and passwords to gain command-line access
+- **RDP**: Attackers target credentials for full interactive desktop sessions, often resulting in immediate system compromise
+
+### 2. Zero-Day and Unpatched Vulnerabilities
+
+Public exposure amplifies the impact of service vulnerabilities:
+
+**Real-World Example**: The 2019 BlueKeep vulnerability (CVE-2019-0708) allowed attackers to achieve remote code execution via RDP without authentication. Publicly exposed port 3389 instances were the primary attack vector for mass exploitation.
+
+### 3. Reconnaissance and Footprinting
+
+Open administrative ports leak valuable intelligence even on fully patched systems, enabling attackers to:
+- Identify operating system types and versions
+- Build detailed infrastructure profiles
+- Plan targeted attacks with precision
+
+---
+
+## Solution Architecture
+
+This automation implements a three-phase control loop: **Detect → Enforce → Audit**
+
+```mermaid
+graph TD
+    subgraph Detection ["🔍 Detection Phase (CA-7)"]
+        A[AWS Config Rules:Incoming-SSH-DisabledIncoming-RDP-Disabled]
+        A -->|Monitors| B[EC2 Security Groups]
+        B -->|Flags Non-Compliance| C[Config Remediation Trigger]
+    end
+    
+    subgraph Enforcement ["⚡ Enforcement Phase (AC-4, SC-7)"]
+        C -->|Invokes| D[SSM Automation Document:RemediateOpenSgDoc]
+        D -->|Executes| E[Lambda Function:ConfigSGRevokerLambda]
+        E -->|API Call: RevokeSecurityGroupIngress| B
+    end
+    
+    subgraph Audit ["📋 Audit Trail (CA-7)"]
+        E -.->|Execution Logs| F[CloudWatch Logs]
+        D -.->|Workflow Records| G[SSM Automation History]
+    end
+    
+    style A fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style B fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+    style E fill:#d1ecf1,stroke:#17a2b8,stroke-width:2px
+    style F fill:#e2e3e5,stroke:#6c757d,stroke-width:2px
+    style G fill:#e2e3e5,stroke:#6c757d,stroke-width:2px
+```
+
+### Component Breakdown
+
+#### 1. Detection Layer (CA-7 - Continuous Monitoring)
+**AWS Config** provides real-time compliance assessment:
+- Specialized Config Rules continuously evaluate all EC2 Security Groups
+- Non-compliant changes (e.g., opening port 22 to 0.0.0.0/0) are flagged within minutes
+- Establishes auditable baseline for security posture
+
+#### 2. Enforcement Layer (AC-4, SC-7 - Access Control & Boundary Protection)
+Automated remediation closes the security gap:
+- **Config Remediation Configuration**: Links violations to automated responses
+- **SSM Automation Document**: Provides auditable orchestration workflow
+- **Lambda Function**: Executes precise API calls to revoke unauthorized rules
+
+#### 3. Audit Layer (CA-7 - Assessment & Authorization)
+Comprehensive logging ensures compliance traceability:
+- **CloudWatch Logs**: Records Lambda execution details with timestamps
+- **SSM Automation History**: Tracks workflow initiation and completion
+- Creates immutable audit trail proving self-monitoring and self-correction
+
+---
+
+## NIST RMF Control Mapping
+
+| Control | Name | Implementation |
+|---------|------|----------------|
+| **AC-4** | Information Flow Enforcement | Lambda function enforces network access restrictions by revoking unauthorized ingress rules |
+| **CA-7** | Continuous Monitoring | AWS Config provides near real-time detection; CloudWatch/SSM create comprehensive audit trail |
+| **SC-7** | Boundary Protection | Automated enforcement ensures principle of least privilege at network perimeter |
+
+---
+
+## Deployment
+
+### Prerequisites
+- AWS CLI configured with appropriate credentials
+- IAM permissions for CloudFormation, Config, Lambda, SSM, and EC2
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/Nisha318/AWS-Repo.git
+cd AWS-Repo
+
+# Deploy the CloudFormation stack
+aws cloudformation create-stack \
+  --stack-name ec2-security-automation \
+  --template-body file://cloudformation/remediation-stack.yaml \
+  --capabilities CAPABILITY_IAM
+```
+
+![AWS CLI](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/01-aws-cli-deploy.png)
+---
+
+## Validation Walkthrough
+
+### Initial State: Compliant Environment
+
+**CloudFormation Stack Deployed:**
+![CloudFormation Stack](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/02-cloudformation-final-stack.png)
+
+**AWS Config Dashboard (All Compliant):**
+![Config Dashboard Compliant](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/03-initial-config-dashboard.png)
+
+**Initial Security Group States (No Inbound Rules):**
+
+*RDP Security Group:*
+![RDP SG Initial](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/04-RDP-SG-Begin.png)
+
+*SSH Security Group:*
+![SSH SG Initial](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/05-SSH-SG-Begin.png)
+
+---
+
+### Phase 1: Violation Detection
+
+**Simulated Attack: Opening Ports to 0.0.0.0/0**
+
+*RDP Port Exposed:*
+![RDP Violation](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/06-sg-violation-created-RDP.png)
+
+*SSH Port Exposed:*
+![SSH Violation](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/07-sg-violation-created-SSH)
+
+**Config Rules Triggered (Non-Compliant Status):**
+![Config Non-Compliant](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/08-config-rule-noncompliant.png)
+
+**Non-Compliant Resource Inventory:**
+- `sg-0679685bff76924c8` (SSH Security Group)
+- `sg-08b6df131d94b0ae4` (RDP Security Group)
+
+![Resource Inventory](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/09-config-rule-resource-inventory.png)
+
+---
+
+### Phase 2: Automated Enforcement
+
+**Lambda Execution Logs (CloudWatch):**
+
+*SSH Rule Revocation:*
+![CloudWatch SSH](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/10-cloudwatch-revoke-SSH.png)
+
+*RDP Rule Revocation:*
+![CloudWatch RDP](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/11-cloudwatch-revoke-RDP.png)
+
+**Lambda Invocation Details:**
+![Lambda Invoke 1](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/12-lambda-invoke1.png)
+![Lambda Invoke 2](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/13-lambda-invoke2.png)
+
+---
+
+### Phase 3: Verified Remediation
+
+**Final Security Group State (Rules Revoked):**
+![SSH SG Final State](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/13-SSH-SG-endstate.png)
+
+![RDP SG Final State](https://raw.githubusercontent.com/Nisha318/AWS-Repo/main/config-auto-revoke-sg/assets/images/aws-config/14-RDP-SG-endstate.png)
+
+✅ **Result**: Unauthorized ingress rules automatically removed, security posture restored
+
+---
+
+## Technical Implementation
+
+### Core Components
+
+#### CloudFormation Template
+Complete infrastructure as code defining Config rules, Lambda function, SSM automation, and IAM roles.
+
+📄 **[View: cloudformation/remediation-stack.yaml](https://github.com/Nisha318/AWS-Repo/blob/main/cloudformation/remediation-stack.yaml)**
+
+#### Lambda Remediation Handler
+Python function that identifies and revokes non-compliant security group rules using EC2 API.
+
+📄 **[View: config-auto-revoke-sg/revoke_rules_handler.py](https://github.com/Nisha318/AWS-Repo/blob/main/config-auto-revoke-sg/revoke_rules_handler.py)**
+
+### Key Lambda Logic
+
+```python
+# Core remediation logic
+response = ec2.revoke_security_group_ingress(
+    GroupId=sg_id,
+    IpPermissions=[rule]
+)
+
+print(f"Revoked {len(ip_permissions)} rule(s) on {sg_id}")
+print(f"Response: {response['ResponseMetadata']['HTTPStatusCode']}")
+```
+
+---
+
+## Security Best Practices
+
+### Recommended Access Controls
+
+Instead of 0.0.0.0/0, restrict SSH and RDP access to:
+
+1. **Corporate IP Ranges**: Specific CIDR blocks (e.g., `203.0.113.0/24`)
+2. **Bastion Hosts**: Dedicated jump servers with hardened configurations
+3. **VPN Endpoints**: IPsec or OpenVPN termination points
+4. **AWS Systems Manager Session Manager**: Eliminates need for direct SSH/RDP entirely
+
+### Principle of Least Privilege
+
+This automation enforces the fundamental security principle:
+> **Grant only the minimum network access required for legitimate business operations**
+
+---
+
+## Monitoring and Maintenance
+
+### CloudWatch Metrics
+- Lambda execution success/failure rates
+- Config rule evaluation frequency
+- SSM automation execution duration
+
+### Alerts and Notifications
+Consider adding SNS topics for:
+- Non-compliance detections
+- Remediation execution failures
+- Repeated violation patterns (indicating potential attacks)
+
+---
+
+## Contributing
+
+Contributions are welcome! Please submit pull requests or open issues for:
+- Additional security controls
+- Enhanced logging capabilities
+- Performance optimizations
+- Documentation improvements
+
+---
+## License
+
+MIT License
+
+Copyright (c) 2025 Nisha318
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Acknowledgments
+
+Built on AWS native services following NIST Risk Management Framework (RMF) guidelines and security best practices.
+
+---
+
+## Contact
+
+**Project Maintainer**: Nisha P McDonnell 
+**Repository**: https://github.com/Nisha318/AWS-Repo
+
+---
+
+## Additional Resources
+
+- [NIST RMF Documentation](https://csrc.nist.gov/projects/risk-management)
+- [AWS Config Best Practices](https://docs.aws.amazon.com/config/latest/developerguide/best-practices.html)
+- [EC2 Security Group Guidelines](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/security-group-rules.html)
+- [AWS Systems Manager Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)
