@@ -58,7 +58,10 @@ This automation implements a structured control flow that aligns with NIST RMF:
 Drift Detection → Automated Remediation → Audit & Continuous Monitoring
 
 Monitored Condition: Inbound rules allowing SSH (22) or RDP (3389) from 0.0.0.0/0.
-![Architecture Diagram](https://github.com/Nisha318/config-auto-revoke-sg/blob/main/assets/images/aws-architecture.png)
+
+![Architecture Diagram](assets/images/architecture.svg)
+<img src="assets/images/architecture.svg" width="900" alt="Architecture Diagram">
+
 Figure: Automated remediation workflow showing AWS Config detection, Lambda enforcement, and CloudWatch logging.
 
 ### Component Breakdown
