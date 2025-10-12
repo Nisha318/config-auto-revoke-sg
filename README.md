@@ -4,13 +4,15 @@
 [![Security](https://img.shields.io/badge/Security-RMF-blue)](https://csrc.nist.gov/projects/risk-management)
 [![Automation](https://img.shields.io/badge/Automation-Lambda-green)](https://aws.amazon.com/lambda/)
 
-> **Automated enforcement of NIST RMF controls AC-4, CA-7, and SC-7 through continuous monitoring and remediation of publicly exposed SSH and RDP ports on AWS EC2 instances.**
+> **Automated enforcement of NIST RMF controls AC-4, CA-7, and SC-7 through continuous monitoring, automated remediation, and compliance validation of AWS Security Group configurations that expose SSH (22) or RDP (3389) to 0.0.0.0/0.**
 
 ---
 
 ## Overview
 
 This project implements an automated security control system that continuously monitors and remediates critical network vulnerabilities in AWS environments. Specifically, it prevents unauthorized exposure of Remote Desktop Protocol (RDP) port 3389 and Secure Shell (SSH) port 22 to the public internet (0.0.0.0/0).
+
+The system continuously monitors Security Groups for configuration drift related to administrative ports (22 and 3389) open to the public internet. When a violation is detected, AWS Config triggers an automated remediation workflow that restores the resource to a compliant state within minutes.
 
 ### The Problem
 
@@ -52,29 +54,27 @@ Open administrative ports leak valuable intelligence even on fully patched syste
 
 ## Solution Architecture
 
-This automation implements a three-phase control loop: **Detect → Enforce → Audit**
+This automation implements a structured control flow that aligns with NIST RMF:
+Drift Detection → Automated Remediation → Audit & Continuous Monitoring
 
-![Architecture Diagram](/assets/images/aws-architecture.png)
+Monitored Condition: Inbound rules allowing SSH (22) or RDP (3389) from 0.0.0.0/0.
+![Architecture Diagram](https://github.com/Nisha318/config-auto-revoke-sg/blob/main/assets/images/aws-architecture.png)
+Figure: Automated remediation workflow showing AWS Config detection, Lambda enforcement, and CloudWatch logging.
 
 ### Component Breakdown
 
-#### 1. Detection Layer (CA-7 - Continuous Monitoring)
-**AWS Config** provides real-time compliance assessment:
-- Specialized Config Rules continuously evaluate all EC2 Security Groups
-- Non-compliant changes (e.g., opening port 22 to 0.0.0.0/0) are flagged within minutes
-- Establishes auditable baseline for security posture
+#### 1. Detection Layer (CA-7 – Continuous Monitoring)
+- **AWS Config** evaluates Security Groups with the managed rule **RESTRICTED_INCOMING_TRAFFIC** (ports **22** and **3389**).
+- Non-compliant changes are flagged; a **RemediationConfiguration** is associated to each rule.
 
-#### 2. Enforcement Layer (AC-4, SC-7 - Access Control & Boundary Protection)
-Automated remediation closes the security gap:
-- **Config Remediation Configuration**: Links violations to automated responses
-- **SSM Automation Document**: Provides auditable orchestration workflow
-- **Lambda Function**: Executes precise API calls to revoke unauthorized rules
+#### 2. Enforcement Layer (AC-4, SC-7 – Access Control & Boundary Protection)
+- **SSM Automation Document** orchestrates remediation.
+- **AWS Lambda** revokes only the offending ingress entries (IPv4 and IPv6), preserving legitimate rules.
 
-#### 3. Audit Layer (CA-7 - Assessment & Authorization)
-Comprehensive logging ensures compliance traceability:
-- **CloudWatch Logs**: Records Lambda execution details with timestamps
-- **SSM Automation History**: Tracks workflow initiation and completion
-- Creates immutable audit trail proving self-monitoring and self-correction
+#### 3. Audit Layer (CA-7 – Assessment & Authorization)
+- **CloudWatch Logs** record Lambda execution and outcomes.
+- **SSM Automation** retains workflow history.
+- **AWS Config Recorder** re-evaluates the resource and updates status to **COMPLIANT**.
 
 ---
 
@@ -88,6 +88,16 @@ Comprehensive logging ensures compliance traceability:
 
 ---
 
+## Monitored Rule Definition
+This automation targets Security Group ingress rules that:
+- Allow **SSH (22)** or **RDP (3389)**
+- Have a source of **0.0.0.0/0**
+- Are attached to **EC2 instances** in scope
+
+Violations trigger AWS Config **RemediationConfiguration** → **SSM Automation** → **Lambda**.
+
+---
+
 ## Deployment
 
 ### Prerequisites
@@ -96,22 +106,27 @@ Comprehensive logging ensures compliance traceability:
 
 ### Quick Start
 
-```bash
 # Clone the repository
 git clone https://github.com/Nisha318/config-auto-revoke-sg.git
-cd AWS-Repo
+cd config-auto-revoke-sg
 
-# Deploy the CloudFormation stack
+# After deployment, AWS Config begins evaluating Security Groups.
+# Any violation matching the monitored rule will auto-remediate.
+
 aws cloudformation deploy \
   --template-file cloudformation/remediation-stack.yaml \
   --stack-name RMF-Auto-SG-Remediation \
   --capabilities CAPABILITY_NAMED_IAM
+
+  > Test in a **non-production account**. Opening 22/3389 to 0.0.0.0/0, even briefly, can expose instances to scanning.
+
+
 ```
 
 ![AWS CLI](assets/images/01-aws-cli-deploy.png)
 ---
 
-## Validation Walkthrough
+## Validation Walkthrough: From Violation to Compliance
 
 ### Initial State: Compliant Environment
 
@@ -119,7 +134,7 @@ aws cloudformation deploy \
 ![CloudFormation Stack](assets/images/02-cloudformation-final-stack.png)
 
 **AWS Config Dashboard (All Compliant):**
-![Config Dashboard Compliant](/assets/images/03-initial-config-dashboard.png)
+![Config Dashboard Compliant](assets/images/03-initial-config-dashboard.png)
 
 **Initial Security Group States (No Inbound Rules):**
 
@@ -182,6 +197,12 @@ aws cloudformation deploy \
 ## Technical Implementation
 
 ### Core Components
+
+config-auto-revoke-sg/
+├─ cloudformation/remediation-stack.yaml
+├─ src/lambda/revoke_sg/app.py # or lambda/revoke_rules_handler.py
+├─ assets/images/architecture.svg
+└─ assets/images/... # walkthrough screenshots
 
 #### CloudFormation Template
 Complete infrastructure as code defining Config rules, Lambda function, SSM automation, and IAM roles.
