@@ -110,19 +110,16 @@ Violations trigger AWS Config **RemediationConfiguration** → **SSM Automation*
 ```
 git clone https://github.com/Nisha318/config-auto-revoke-sg.git
 cd config-auto-revoke-sg
-```
-
-# After deployment, AWS Config begins evaluating Security Groups.
-# Any violation matching the monitored rule will auto-remediate.
-
-```
 aws cloudformation deploy \
   --template-file cloudformation/remediation-stack.yaml \
   --stack-name RMF-Auto-SG-Remediation \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-  > Test in a **non-production account**. Opening 22/3389 to 0.0.0.0/0, even briefly, can expose instances to scanning.
+# After deployment, AWS Config begins evaluating Security Groups.
+# Any violation matching the monitored rule will auto-remediate.
+
+> Test in a **non-production account**. Opening 22/3389 to 0.0.0.0/0, even briefly, can expose instances to scanning.
 
 
 ```
