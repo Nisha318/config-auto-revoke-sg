@@ -59,7 +59,6 @@ Drift Detection → Automated Remediation → Audit & Continuous Monitoring
 
 Monitored Condition: Inbound rules allowing SSH (22) or RDP (3389) from 0.0.0.0/0.
 
-![Architecture Diagram](assets/images/aws-architecture.png)
 <img src="assets/images/aws-architecture.png" width="900" alt="Architecture Diagram">
 
 Figure: Automated remediation workflow showing AWS Config detection, Lambda enforcement, and CloudWatch logging.
