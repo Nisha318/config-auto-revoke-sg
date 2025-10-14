@@ -77,7 +77,8 @@ Figure: Automated remediation workflow showing AWS Config detection, Lambda enfo
 - **CloudWatch Logs** record Lambda execution and outcomes.
 - **SSM Automation** retains workflow history.
 - **AWS Config Recorder** re-evaluates the resource and updates status to **COMPLIANT**.
-
+- **CloudTrail** is the system of record for API activity across EC2, Config, Lambda, and SSM.
+- **CloudTrail is the system of record for API activity across EC2, Config, Lambda, and SSM.
 ---
 
 ## NIST RMF Control Mapping
@@ -87,6 +88,14 @@ Figure: Automated remediation workflow showing AWS Config detection, Lambda enfo
 | **AC-4** | Information Flow Enforcement | Lambda function enforces network access restrictions by revoking unauthorized ingress rules |
 | **CA-7** | Continuous Monitoring | AWS Config provides near real-time detection; CloudWatch/SSM create comprehensive audit trail |
 | **SC-7** | Boundary Protection | Automated enforcement ensures principle of least privilege at network perimeter |
+| **AU-12** | Audit Generation | CloudTrail records API activity for EC2, Config, Lambda, and SSM. CloudWatch Logs stores Lambda execution logs. SSM keeps Automation run history. |
+| **AU-2** | Auditable Events | Events exist for opening and revoking 22 or 3389, compliance state changes, Automation invocations, and Lambda execution. |
+| **AU-3** | Content of Audit Records | CloudTrail entries include principal, time, request, response, and event ID. Lambda logs include timestamps and status. |
+| **AU-8** | Time Stamps | CloudTrail and CloudWatch Logs use consistent UTC timestamps. |
+
+**Audit hardening (optional):** enable CloudTrail integrity validation, encrypt the trail bucket with SSE-KMS, set log retention, and add delivery/remediation alarms.
+
+> Assumption: An account or organization CloudTrail trail is enabled and delivering to S3.
 
 ---
 
