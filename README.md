@@ -133,8 +133,6 @@ aws cloudformation deploy \
 > Test in a **non-production account**. Opening 22/3389 to 0.0.0.0/0, even briefly, can expose instances to scanning.
 
 
-```
-
 ![AWS CLI](assets/images/01-aws-cli-deploy.png)
 ---
 
@@ -213,7 +211,7 @@ aws cloudformation deploy \
 config-auto-revoke-sg/
 ├─ cloudformation/remediation-stack.yaml
 ├─ src/lambda/revoke_sg/app.py # or lambda/revoke_rules_handler.py
-├─ assets/images/architecture.svg
+├─ assets/images/architecture.png
 └─ assets/images/... # walkthrough screenshots
 
 #### CloudFormation Template
