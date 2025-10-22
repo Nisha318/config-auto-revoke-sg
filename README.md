@@ -95,13 +95,15 @@ Figure: Automated remediation workflow showing AWS Config detection, Lambda enfo
 
 ## Defense in Depth
 
-While this project focuses on **post-deployment detection and automated remediation**, it should be paired with **preventive controls** to minimize risk:
+While this solution focuses on **post-deployment detection and automated remediation**, it is most effective when paired with **preventive controls** to minimize risk and exposure windows.
 
-- Implement preventive checks in the CI/CD pipeline using tools like **Checkov**, **Terraform Cloud Policy Sets**, or AWS **Service Control Policies (SCPs)**.  
-- Use infrastructure guardrails to **block the deployment** of insecure configurations (e.g., security groups with 0.0.0.0/0 on administrative ports).  
-- Enforce least privilege at the network perimeter to reduce exposure windows.
+### Recommended Preventive Measures
+- **Pipeline Guardrails:** Integrate security checks into the CI/CD pipeline using tools like **Checkov**, **Terraform Cloud Policy Sets**, or AWS **Service Control Policies (SCPs)** to block insecure security group rules before they are deployed.
+- **Policy Enforcement:** Use service control policies or organizational guardrails to ensure only approved configurations are allowed in production.
+- **Layered Protection:** By combining preventive controls with continuous monitoring, even if a rule slips through the pipeline, AWS Config and Lambda remediation will enforce compliance automatically.
 
-This layered approach ensures that even if preventive controls are bypassed or disabled, continuous monitoring and automated enforcement remain in place to close security gaps quickly.
+This layered strategy aligns with Zero Trust and defense-in-depth principles, reducing both the likelihood and impact of misconfigurations.
+
 
 ---
 
