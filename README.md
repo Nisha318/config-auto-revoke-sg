@@ -93,6 +93,18 @@ Figure: Automated remediation workflow showing AWS Config detection, Lambda enfo
 
 ---
 
+## Defense in Depth
+
+While this project focuses on **post-deployment detection and automated remediation**, it should be paired with **preventive controls** to minimize risk:
+
+- Implement preventive checks in the CI/CD pipeline using tools like **Checkov**, **Terraform Cloud Policy Sets**, or AWS **Service Control Policies (SCPs)**.  
+- Use infrastructure guardrails to **block the deployment** of insecure configurations (e.g., security groups with 0.0.0.0/0 on administrative ports).  
+- Enforce least privilege at the network perimeter to reduce exposure windows.
+
+This layered approach ensures that even if preventive controls are bypassed or disabled, continuous monitoring and automated enforcement remain in place to close security gaps quickly.
+
+---
+
 ## NIST RMF Control Mapping
 
 | Control | Name | Layer | Implementation |
