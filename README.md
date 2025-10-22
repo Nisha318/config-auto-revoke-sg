@@ -69,7 +69,9 @@ Monitored Condition: Inbound rules allowing SSH (22) or RDP (3389) from 0.0.0.0/
 
 <img src="assets/images/aws-architecture.png" width="900" alt="Architecture Diagram">
 
-Figure: Automated remediation workflow showing AWS Config detection, Lambda enforcement, and CloudWatch logging.
+**Figure:** Automated enforcement workflow showing AWS Config detection, Lambda enforcement, and CloudWatch logging.  
+This solution operates **post-deployment** as part of a **defense-in-depth strategy**.  
+Preventive guardrails in the CI/CD pipeline can block insecure configurations before they are deployed, while this enforcement layer ensures **continuous protection** in the live environment.
 
 ### Component Breakdown
 
