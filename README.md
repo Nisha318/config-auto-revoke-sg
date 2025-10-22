@@ -86,7 +86,6 @@ Figure: Automated remediation workflow showing AWS Config detection, Lambda enfo
 - **SSM Automation** retains workflow history.
 - **AWS Config Recorder** re-evaluates the resource and updates status to **COMPLIANT**.
 - **CloudTrail** is the system of record for API activity across EC2, Config, Lambda, and SSM.
-- **CloudTrail is the system of record for API activity across EC2, Config, Lambda, and SSM.
 ---
 
 ## NIST RMF Control Mapping
