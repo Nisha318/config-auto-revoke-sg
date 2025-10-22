@@ -14,6 +14,14 @@ This project implements an automated security control system that continuously m
 
 The system continuously monitors Security Groups for configuration drift related to administrative ports (22 and 3389) open to the public internet. When a violation is detected, AWS Config triggers an automated remediation workflow that restores the resource to a compliant state within minutes.
 
+## 🎥 Video Walkthrough
+
+Watch a 7-minute technical demonstration of this project in action:
+
+[![AWS Config Automation Demo](https://img.youtube.com/vi/EHbd3LU4qsA/maxresdefault.jpg)](https://www.youtube.com/watch?v=EHbd3LU4qsA)
+
+*Click to watch: Problem → Architecture → Live Demo → Results*
+
 ### The Problem
 
 Publicly accessible administrative ports represent one of the most critical security vulnerabilities in cloud infrastructure. When SSH (port 22) or RDP (port 3389) are exposed to 0.0.0.0/0, you essentially leave the front door to your servers wide open to the entire internet.
@@ -270,6 +278,14 @@ Consider adding SNS topics for:
 - Remediation execution failures
 - Repeated violation patterns (indicating potential attacks)
 
+
+## 🎥 Video Walkthrough
+
+Watch a 7-minute technical demonstration of this project in action:
+
+[![AWS Config Automation Demo](https://img.youtube.com/vi/EHbd3LU4qsA/maxresdefault.jpg)](https://www.youtube.com/watch?v=EHbd3LU4qsA)
+
+*Click to watch: Problem → Architecture → Live Demo → Results*
 ---
 
 ## Contributing
