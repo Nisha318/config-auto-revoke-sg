@@ -74,33 +74,38 @@ Figure: Automated remediation workflow showing AWS Config detection, Lambda enfo
 ### Component Breakdown
 
 #### 1. Detection Layer (CA-7 – Continuous Monitoring)
-- **AWS Config** evaluates Security Groups with the managed rule **RESTRICTED_INCOMING_TRAFFIC** (ports **22** and **3389**).
-- Non-compliant changes are flagged; a **RemediationConfiguration** is associated to each rule.
+- **AWS Config continuously evaluates Security Groups using the managed rule RESTRICTED_INCOMING_TRAFFIC for ports 22 and 3389.
+- **Any violation (such as an SSH or RDP rule open to 0.0.0.0/0) is automatically flagged in near real time.
+- **This supports continuous monitoring by detecting configuration drift as soon as it occurs.
 
 #### 2. Enforcement Layer (AC-4, SC-7 – Access Control & Boundary Protection)
 - **SSM Automation Document** orchestrates remediation.
 - **AWS Lambda** revokes only the offending ingress entries (IPv4 and IPv6), preserving legitimate rules.
+- **This targeted enforcement supports access control and boundary protection without disrupting approved configurations.
 
-#### 3. Audit Layer (CA-7 – Assessment & Authorization)
-- **CloudWatch Logs** record Lambda execution and outcomes.
+#### 3. Audit Layer (CA-7 – Continuous Monitoring, AU-2, AU-3, AU-8, AU-12 – Audit and Accountability)
+- **CloudTrail records API activity across Config, Lambda, SSM, and EC2.
+- **CloudWatch Logs capture Lambda execution, including timestamps and status.
 - **SSM Automation** retains workflow history.
-- **AWS Config Recorder** re-evaluates the resource and updates status to **COMPLIANT**.
-- **CloudTrail** is the system of record for API activity across EC2, Config, Lambda, and SSM.
+- **AWS Config tracks configuration state changes and compliance history.
+- **These logs and records support the AU control family by providing traceable evidence of detection and enforcement events.
+- **They also strengthen CA-7 by enabling continuous oversight and reporting.
+
 ---
 
 ## NIST RMF Control Mapping
 
-| Control | Name | Implementation |
-|---------|------|----------------|
-| **AC-4** | Information Flow Enforcement | Lambda function enforces network access restrictions by revoking unauthorized ingress rules |
-| **CA-7** | Continuous Monitoring | AWS Config provides near real-time detection; CloudWatch/SSM create comprehensive audit trail |
-| **SC-7** | Boundary Protection | Automated enforcement ensures principle of least privilege at network perimeter |
-| **AU-12** | Audit Generation | CloudTrail records API activity for EC2, Config, Lambda, and SSM. CloudWatch Logs stores Lambda execution logs. SSM keeps Automation run history. |
-| **AU-2** | Auditable Events | Events exist for opening and revoking 22 or 3389, compliance state changes, Automation invocations, and Lambda execution. |
-| **AU-3** | Content of Audit Records | CloudTrail entries include principal, time, request, response, and event ID. Lambda logs include timestamps and status. |
-| **AU-8** | Time Stamps | CloudTrail and CloudWatch Logs use consistent UTC timestamps. |
+| Control | Name | Layer | Implementation |
+|---------|------|-------|----------------|
+| **AC-4** | Information Flow Enforcement | Enforcement | Lambda function enforces network access restrictions by revoking unauthorized ingress rules while preserving legitimate access. |
+| **CA-7** | Continuous Monitoring | Detection & Audit | AWS Config continuously evaluates security groups for drift. Compliance status and resource history support ongoing visibility, while CloudWatch and SSM provide operational awareness. |
+| **SC-7** | Boundary Protection | Enforcement | Automated enforcement ensures the principle of least privilege at the network perimeter by removing dangerous ingress rules (22/3389 to 0.0.0.0/0). |
+| **AU-2** | Auditable Events | Audit | Events are generated for security group modifications, remediation actions, compliance state changes, Automation invocations, and Lambda executions. |
+| **AU-3** | Content of Audit Records | Audit | CloudTrail records API caller identity, event time, source IP, and request details. Lambda logs capture execution results and outcomes. |
+| **AU-8** | Time Stamps | Audit | CloudTrail and CloudWatch Logs use standardized UTC timestamps to ensure consistent time correlation. |
+| **AU-12** | Audit Generation | Audit | CloudTrail and CloudWatch generate and store detailed audit records of detection, remediation, and compliance actions. |
 
-**Audit hardening (optional):** enable CloudTrail integrity validation, encrypt the trail bucket with SSE-KMS, set log retention, and add delivery/remediation alarms.
+**Audit hardening (optional):** Enable CloudTrail log file integrity validation, encrypt the trail bucket with SSE-KMS, configure retention policies, and add delivery/remediation alarms for better operational visibility.
 
 > Assumption: An account or organization CloudTrail trail is enabled and delivering to S3.
 
